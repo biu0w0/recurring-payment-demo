@@ -10,8 +10,8 @@ using RecurringPayment::SignContractReq;
 using RecurringPayment::SignContractRsp;
 using RecurringPayment::TerminateContractReq;
 using RecurringPayment::TerminateContractRsp;
-using RecurringPayment::GetValidContractListReq;
-using RecurringPayment::GetValidContractListRsp;
+using RecurringPayment::GetUserContractListReq;
+using RecurringPayment::GetUserContractListRsp;
 
 namespace RecurringPaymentImpl {
     class Impl final : public RecurringPaymentSvc::Service {
@@ -26,7 +26,7 @@ namespace RecurringPaymentImpl {
                                  TerminateContractRsp *rsp) override;
 
         // (用户)查看有效扣费服务列表
-        Status GetValidContractList(ServerContext *ctx, const GetValidContractListReq *req,
-                                    GetValidContractListRsp *rsp) override;
+        Status GetUserContractList(ServerContext *ctx, const GetUserContractListReq *req,
+                                   GetUserContractListRsp *rsp) override;
     };
 }

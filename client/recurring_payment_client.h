@@ -17,11 +17,14 @@ namespace RecurringPaymentClient {
 
         void ListContract(unsigned int limit, unsigned int offset);
 
-        bool SignContract(std::string contract_code);
+        bool SignContract(const std::string &contract_token);
 
         bool TerminateContract(unsigned long int contract_id);
 
         std::string PrepareContract();
+
+    protected:
+        void CheckLogin() const;
 
     private:
         std::unique_ptr<RecurringPaymentSvc::Stub> stub_;

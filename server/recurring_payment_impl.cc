@@ -23,9 +23,9 @@ Status Impl::TerminateContract(ServerContext *ctx, const TerminateContractReq *r
     return Status::OK;
 }
 
-// (用户)查看有效扣费服务列表
-Status Impl::GetValidContractList(ServerContext *ctx, const GetValidContractListReq *req,
-                                  GetValidContractListRsp *rsp) {
+// (用户)查看扣费服务列表
+Status Impl::GetUserContractList(ServerContext *ctx, const GetUserContractListReq *req,
+                                 GetUserContractListRsp *rsp) {
     rsp->set_err_code(418);
     rsp->set_err_msg("not implemented");
     return Status::OK;

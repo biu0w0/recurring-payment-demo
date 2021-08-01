@@ -10,8 +10,8 @@ service RecurringPaymentSvc {
   rpc SignContract (SignContractReq) returns (SignContractRsp) {}
   // (商户/用户)终止扣费协议
   rpc TerminateContract (TerminateContractReq) returns (TerminateContractRsp) {}
-  // (用户)查看有效扣费服务列表
-  rpc GetValidContractList (GetValidContractListReq) returns (GetValidContractListRsp) {}
+  // (用户)查看扣费服务列表
+  rpc GetUserContractList (GetUserContractListReq) returns (GetUserContractListRsp) {}
 }
 
 // (商户)准备扣费协议-请求
@@ -60,15 +60,15 @@ message TerminateContractRsp {
   string err_msg = 2;
 }
 
-// (用户)查看有效扣费服务列表-请求
-message GetValidContractListReq {
+// (用户)查看扣费服务列表-请求
+message GetUserContractListReq {
   uint64 user_id = 1; // 用户ID
   uint32 limit = 2; // 分页:限制
   uint32 offset = 3; // 分页:偏移
 }
 
-// (用户)查看有效扣费服务列表-响应
-message GetValidContractListRsp {
+// (用户)查看扣费服务列表-响应
+message GetUserContractListRsp {
   int32 err_code = 1;
   string err_msg = 2;
   uint32 total = 3; // 总数
