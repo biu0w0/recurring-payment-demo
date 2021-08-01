@@ -1,0 +1,107 @@
+syntax = "proto3";
+
+package RecurringPayment;
+
+// 扣费服务
+service RecurringPaymentSvc {
+  // (商户)准备扣费协议
+  rpc PrepareContract (PrepareContractReq) returns (PrepareContractRsp) {}
+  // (用户)签约扣费协议
+  rpc SignContract (SignContractReq) returns (SignContractRsp) {}
+  // (商户/用户)终止扣费协议
+  rpc TerminateContract (TerminateContractReq) returns (TerminateContractRsp) {}
+  // (用户)查看有效扣费服务列表
+  rpc GetValidContractList (GetValidContractListReq) returns (GetValidContractListRsp) {}
+}
+
+// (商户)准备扣费协议-请求
+message PrepareContractReq {
+  uint64 mch_id = 1; // 商户ID
+  uint64 app_id = 2; // 应用ID
+  uint64 plan_id = 3; // 代扣方案ID
+  string contract_code = 4; // 商户协议号
+  string display_account = 5; // 开通账户名称
+  string callback_url = 6; // 签约结果回调URl
+  string signature = 7; // 商户签名
+}
+
+// (商户)准备扣费协议-响应
+message PrepareContractRsp {
+  int32 err_code = 1;
+  string err_msg = 2;
+  string contract_token = 3; // 待签约协议token
+  string expired_time = 4; // 签约时限
+}
+
+// (用户)签约扣费协议-请求
+message SignContractReq {
+  uint64 user_id = 1; // 用户ID
+  string contract_token = 2; // 待签约协议token
+  string signature = 3; // 用户签名
+}
+
+// (用户)签约扣费协议-响应
+message SignContractRsp {
+  int32 err_code = 1;
+  string err_msg = 2;
+}
+
+// (商户/用户)终止扣费协议-请求
+message TerminateContractReq {
+  uint64 contract_id = 1; // 协议ID
+  uint64 user_id = 2; // 用户签名(用户解约时)
+  uint64 mch_id = 3; // 商户签名(商户解约时)
+  string signature = 4; // 签名
+}
+
+// (商户/用户)终止扣费协议-响应
+message TerminateContractRsp {
+  int32 err_code = 1;
+  string err_msg = 2;
+}
+
+// (用户)查看有效扣费服务列表-请求
+message GetValidContractListReq {
+  uint64 user_id = 1; // 用户ID
+  uint32 limit = 2; // 分页:限制
+  uint32 offset = 3; // 分页:偏移
+}
+
+// (用户)查看有效扣费服务列表-响应
+message GetValidContractListRsp {
+  int32 err_code = 1;
+  string err_msg = 2;
+  uint32 total = 3; // 总数
+  uint32 limit = 4; // 分页:限制
+  uint32 offset = 5; // 分页:偏移
+  repeated ContractInfo contract_list = 6; // 协议列表
+}
+
+// 代扣协议
+message ContractInfo {
+  uint64 user_id = 1; // 用户ID
+  uint64 mch_id = 2; // 商户ID
+  string mch_name = 3; // 商户名称
+  uint64 app_id = 4; // 应用ID
+  string app_name = 5; // 应用名称
+  uint64 contract_id = 6; // 协议ID
+  string contract_code = 7; // 商户协议号
+  ContractState contract_state = 8; // 协议状态
+  uint64 plan_id = 9; // 代扣方案ID
+  string plan_name = 10; // 代扣方案名称
+  string plan_desc = 11; // 代扣方案描述
+  string display_account = 12; // 开通账户名称
+  string signed_time = 13; // 协议签署时间
+  string expired_time = 14; // 协议到期时间
+  string terminated_time = 15; // 协议解约时间
+}
+
+// 代扣协议状态
+enum ContractState {
+  Pending = 0; // 签约中
+  Valid = 1; // 有效签约
+  Expired = 2; // 签约过期
+  Revoked = 3; // 已被吊销
+  UserTerminated = 4; // 用户终止签约
+  MerchantTerminated = 5; // 服务商终止签约
+}

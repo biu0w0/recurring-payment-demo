@@ -1,1 +1,6 @@
-.idea
+# IDE specific folder for JetBrains IDEs
+.idea/
+.clwb/
+
+# Bazel files
+bazel-*
