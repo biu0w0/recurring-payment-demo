@@ -121,9 +121,14 @@ string Client::PrepareContract() {
     unsigned long mch_id = 1; // 商户ID
     unsigned long app_id = 1; // 应用ID
     unsigned long plan_id = 1; // 代扣方案ID
-    string contract_code = "CC"; // 商户协议号
     string display_account = "会员A"; // 开通账户名称
     string callback_url = "http://localhost"; // 签约结果回调URl
+
+    // 生成商户协议号
+    time_t t = time(nullptr);
+    char time_str[14];
+    strftime(time_str, 14, "%Y%m%d%H%M%S", localtime(&t));
+    string contract_code = "CC" + string(time_str, 14);
 
     // 生成签名
     map<string, string> sign_map;
