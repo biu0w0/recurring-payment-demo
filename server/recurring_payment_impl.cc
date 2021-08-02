@@ -86,6 +86,9 @@ Status Impl::SignContract(ServerContext *ctx, const SignContractReq *req, SignCo
             throw ImplException(422, "signature is required");
         }
 
+        // todo 检查用户签名
+        // if (req->signature() != expect_signature) {}
+
         // 解出待签约协议ID
         unsigned long contract_id = 0;
         std::regex re(R"(CONTRACT\|(\d+)\|FAKE-HASH)");
@@ -137,9 +140,6 @@ Status Impl::SignContract(ServerContext *ctx, const SignContractReq *req, SignCo
             }
         }
 
-        // todo 检查用户签名
-        // if (req->signature() != expect_signature) {}
-
         // todo 检查用户是否有相同plan_id的生效中协议
         // if (...) {}
 
@@ -178,8 +178,69 @@ Status Impl::SignContract(ServerContext *ctx, const SignContractReq *req, SignCo
 
 // (商户/用户)终止扣费协议
 Status Impl::TerminateContract(ServerContext *ctx, const TerminateContractReq *req, TerminateContractRsp *rsp) {
-    rsp->set_err_code(418);
-    rsp->set_err_msg("not implemented");
+    try {
+        // 校验参数
+        if (req->user_id() == 0) {
+            throw ImplException(422, "user_id is invalid");
+        }
+        if (req->contract_id() == 0) {
+            throw ImplException(422, "contract_id is required");
+        }
+        if (req->signature().empty()) {
+            throw ImplException(422, "signature is required");
+        }
+
+        // todo 检查用户签名
+        // if (req->signature() != expect_signature) {}
+
+        // 获取可解约协议
+        mysqlx::RowResult rows = (*db).getDefaultSchema()
+                .getTable(contracts_table)
+                .select("id", "user_id", "mch_id", "app_id", "plan_id",
+                        "contract_code", "contract_state", "display_account",
+                        "signed_time", "expired_time", "terminated_time")
+                .where("id = :id AND user_id = :uid AND contract_state = :state")
+                .limit(1)
+                .bind("id", req->contract_id())
+                .bind("uid", req->user_id())
+                .bind("state", int(ContractState::Valid))
+                .execute();
+        mysqlx::Row row = rows.fetchOne();
+        if (row.isNull()) {
+            throw ImplException(404, "contract not found");
+        }
+        ContractInfo c;
+        Helper::RowToContractInfo(row, c);
+
+        // 当前时间
+        time_t t = time(nullptr);
+        char time_str[19];
+        strftime(time_str, 19, "%Y-%m-%d %H:%M:%S", localtime(&t));
+        std::string current_time = std::string(time_str, 19);
+
+        // 更新协议
+        mysqlx::Result result = (*db).getDefaultSchema()
+                .getTable(contracts_table)
+                .update()
+                .set("contract_state", int(ContractState::UserTerminated))
+                .set("terminated_time", current_time)
+                .where("id = :id AND user_id = :uid AND contract_state = :state")
+                .limit(1)
+                .bind("id", c.contract_id())
+                .bind("uid", c.user_id())
+                .bind("state", int(ContractState::Valid))
+                .execute();
+        if (result.getAffectedItemsCount() == 0) {
+            throw ImplException(503, "contract is not available");
+        }
+    } catch (const ImplException &e) {
+        rsp->set_err_code(e.getCode());
+        rsp->set_err_msg(e.getMessage());
+    } catch (const std::exception &e) {
+        std::cout << "TerminateContract exception: " << e.what() << std::endl;
+        rsp->set_err_code(500);
+        rsp->set_err_msg("Server Error");
+    }
     return Status::OK;
 }
 
