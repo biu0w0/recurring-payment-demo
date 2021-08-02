@@ -1,3 +1,5 @@
+.DS_Store
+
 # IDE specific folder for JetBrains IDEs
 .idea/
 .clwb/

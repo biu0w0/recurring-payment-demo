@@ -5,28 +5,6 @@
 
 using namespace std;
 
-int Interact(RecurringPaymentClient::Client &client);
-
-int main(int argc, char **argv) {
-    if (argc != 2) {
-        cout << "Usage: recurring_payment_client <server_ip>:<server_port>" << endl;
-        return 0;
-    }
-
-    string server_address = argv[1];
-    cout << "当前服务端: " << server_address << endl;
-
-    // DEMO不使用凭据，正式可选用JWT/AccessToken(OAuth2.0)作为凭据
-    const shared_ptr<grpc::ChannelCredentials> &credentials = grpc::InsecureChannelCredentials();
-    RecurringPaymentClient::Client client(grpc::CreateChannel(server_address, credentials));
-
-    while (Interact(client) == 0) {
-        cout << endl;
-    }
-
-    return 0;
-}
-
 // 打印可用命令
 void PrintCommandList() {
     cout << "可用命令列表:" << endl;
@@ -34,7 +12,7 @@ void PrintCommandList() {
     cout << "\tlogin\t登录，绑定user_id" << endl;
     cout << "\tlist\t查看已签约协议列表（仅列出有效协议）" << endl;
     cout << "\tsign\t签约协议" << endl;
-    cout << "\tterminate\t解约协议" << endl;
+    cout << "\tterm\t解约协议" << endl;
     cout << "\tprepare\t模拟商户准备签约协议，获取待签约协议token" << endl;
     cout << "\tquit\t退出程序" << endl;
 }
@@ -80,7 +58,7 @@ int Interact(RecurringPaymentClient::Client &client) {
             return 0;
         }
 
-        if (cmd == "terminate") {
+        if (cmd == "term") {
             string input;
             cout << "请输入要解约的协议ID: ";
             cin >> input;
@@ -100,7 +78,7 @@ int Interact(RecurringPaymentClient::Client &client) {
                 return 0;
             }
             cout << "待签约协议号: " << contract_token << endl;
-            cout << "你可以使用`sign`指令完成签约" << contract_token << endl;
+            cout << "你可以使用`sign`指令完成签约" << endl;
             return 0;
         }
 
@@ -109,5 +87,26 @@ int Interact(RecurringPaymentClient::Client &client) {
     } catch (exception &e) {
         cout << e.what() << endl;
     }
+    return 0;
+}
+
+int main(int argc, char **argv) {
+    if (argc != 2) {
+        cout << "Usage: recurring_payment_client <server_ip>:<server_port>" << endl;
+        return 0;
+    }
+
+    string server_address = argv[1];
+    cout << "当前服务端: " << server_address << endl;
+
+    // DEMO不使用凭据，正式可选用JWT/AccessToken(OAuth2.0)作为凭据
+    const shared_ptr<grpc::ChannelCredentials> &credentials = grpc::InsecureChannelCredentials();
+    RecurringPaymentClient::Client client(grpc::CreateChannel(server_address, credentials));
+
+    PrintCommandList();
+    while (Interact(client) == 0) {
+        cout << endl;
+    }
+
     return 0;
 }

@@ -8,6 +8,8 @@ using namespace std;
 using RecurringPaymentClient::Client;
 using RecurringPaymentClient::ClientException;
 using RecurringPayment::RecurringPaymentSvc;
+using RecurringPayment::ContractInfo;
+using RecurringPayment::ContractState_Name;
 using RecurringPayment::PrepareContractReq;
 using RecurringPayment::PrepareContractRsp;
 using RecurringPayment::SignContractReq;
@@ -51,7 +53,22 @@ void Client::ListContract(unsigned int limit, unsigned int offset) {
     }
 
     // 打印协议列表
-    rsp.contract_list();
+    int total = rsp.contract_list().size();
+    if (total == 0) {
+        cout << "当前用户没有生效中的协议" << endl;
+        return;
+    }
+    for (int i = 0; i < total; i++) {
+        ContractInfo c = rsp.contract_list().Get(i);
+        cout << "----- ID " << c.contract_id() << " -----" << endl;
+        cout << "协议编号\t" << c.contract_code() << endl;
+        cout << "服务名称\t" << c.plan_name() << endl;
+        cout << "应用名称\t" << c.app_name() << endl;
+        cout << "当前状态\t" << ContractState_Name(c.contract_state()) << endl;
+        cout << "签约时间\t" << c.signed_time() << endl;
+        cout << "开通账号\t" << c.display_account() << endl;
+        cout << "详情\t" << c.plan_desc() << endl;
+    }
 }
 
 // 签约协议

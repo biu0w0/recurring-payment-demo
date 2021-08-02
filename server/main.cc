@@ -1,31 +1,43 @@
 #include <iostream>
 #include <memory>
-#include <string>
 #include <grpcpp/grpcpp.h>
 #include "recurring_payment_impl.h"
 
-void RunServer(std::string &server_address) {
+using namespace std;
+
+void RunServer(string &server_address, string &db_str) {
     RecurringPaymentImpl::Impl service;
 
+    // 连接数据库
+    service.ConnectDb(db_str);
+
+    // 注册服务
     grpc::ServerBuilder builder;
-    // DEMO不使用凭据，正式可选用JWT/AccessToken(OAuth2.0)作为凭据
-    builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
+    builder.AddListeningPort(server_address, grpc::InsecureServerCredentials()); // 可替换为JWT/OAuth2.0凭据
     builder.RegisterService(&service);
 
-    std::unique_ptr<grpc::Server> server(builder.BuildAndStart());
-    std::cout << "Server listening on " << server_address << std::endl;
+    // 启动服务
+    unique_ptr<grpc::Server> server(builder.BuildAndStart());
+    cout << "Server listening on " << server_address << endl;
     server->Wait();
 }
 
 int main(int argc, char **argv) {
     if (argc < 2) {
-        std::cout << "Usage: recurring_payment_server <listen_ip>:<listen_port>" << std::endl;
+        cout << "Usage: recurring_payment_server "
+             << "0.0.0.0:50051> \"mysqlx://user:pwd@host:port/db?ssl-mode=disabled\""
+             << endl;
         return 0;
     }
 
-    std::string server_address = argv[1];
+    string server_address = argv[1];
+    string db_str = argv[2];
 
-    RunServer(server_address);
+    try {
+        RunServer(server_address, db_str);
+    } catch (const exception &e) {
+        cout << "uncaught exception: " << e.what() << endl;
+    }
 
     return 0;
 }

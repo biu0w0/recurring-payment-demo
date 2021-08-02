@@ -30,3 +30,15 @@ load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
 grpc_deps()
 load("@com_github_grpc_grpc//bazel:grpc_extra_deps.bzl", "grpc_extra_deps")
 grpc_extra_deps()
+
+# mysql connector c++
+#http_archive(
+#    name = "mysql_connector",
+#    sha256 = "c2724fb302717971198fbe9ee88eab11b567245a38930fa09e850d33e51ff52a",
+#    strip_prefix = "mysql-connector-c++/8.0.26",
+#    url = "https://mirrors.ustc.edu.cn/homebrew-bottles/mysql-connector-c%2B%2B-8.0.26.arm64_big_sur.bottle.tar.gz",
+#)
+local_repository(
+    name = "mysql_connector",
+    path = "/opt/homebrew/opt/mysql-connector-c++",
+)
