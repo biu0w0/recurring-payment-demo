@@ -25,7 +25,8 @@ void RunServer(string &server_address, string &db_str) {
 int main(int argc, char **argv) {
     if (argc < 2) {
         cout << "Usage: recurring_payment_server "
-             << "0.0.0.0:50051> \"mysqlx://user:pwd@host:port/db?ssl-mode=disabled\""
+             << "0.0.0.0:50051 "
+             << "\"mysqlx://user:pwd@host:port/db?ssl-mode=disabled\""
              << endl;
         return 0;
     }
