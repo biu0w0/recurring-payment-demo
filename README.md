@@ -156,3 +156,52 @@ Demo中可以使用`prepare`命令模拟商户准备签约协议，获取待签�
 
 退出当前客户端程序。
 
+## 附录
+
+### Bazel C++ macOS ARM64架构编译问题
+
+macOS平台编译可使用Homebrew安装Bazel编译。
+
+采用Apple Silicon（M1芯片等）的Mac机型属于ARM64架构，Bazel 4.1.0-homebrew在macOS ARM64架构下编译C++会报错：
+
+```shell
+cc_toolchain_suite '@local_config_cc//:toolchain' does not contain a toolchain for cpu 'darwin_arm64'
+```
+
+解决方法：
+
+项目目录执行`vim $(bazel info output_base)/external/local_config_cc/BUILD`，替换原有`cc_toolchain_suite`块内容为：
+
+```
+cc_toolchain_suite(
+    name = "toolchain",
+    toolchains = {
+        "darwin|clang": ":cc-compiler-darwin",
+        "darwin_arm64|clang": ":cc-compiler-darwin", # FIX Apple Silicon
+        "darwin": ":cc-compiler-darwin",
+        "darwin_arm64": ":cc-compiler-darwin", # FIX Apple Silicon
+        "armeabi-v7a|compiler": ":cc-compiler-armeabi-v7a",
+        "armeabi-v7a": ":cc-compiler-armeabi-v7a",
+    },
+)
+
+# FIX Apple Silicon
+cc_toolchain(
+    name = "cc-compiler-darwin_arm64",
+    toolchain_identifier = "local",
+    toolchain_config = ":local",
+    all_files = ":compiler_deps",
+    ar_files = ":compiler_deps",
+    as_files = ":compiler_deps",
+    compiler_files = ":compiler_deps",
+    dwp_files = ":empty",
+    linker_files = ":compiler_deps",
+    objcopy_files = ":empty",
+    strip_files = ":empty",
+    supports_param_files = 1,
+    module_map = ":module.modulemap",
+)
+```
+
+再次执行`bazel build`或`bazel run`命令即可。
+
