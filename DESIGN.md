@@ -67,7 +67,7 @@ Demo未展开设计代扣方案模型，只要求必需属性：
 | plan_id | uint64 | 代扣方案ID | 808 |
 | contract_id    | uint64 | 代扣协议ID，自动生成，全局唯一 | 518060 |
 | contract_code  | string | 商户侧生成的代扣协议号，同商户唯一 | RP20210809220243 |
-| contract_state | enum   | 协议状态，详见下表 | (1)Valid  |
+| contract_state | enum   | 协议状态，详见下表 | Valid(1) |
 | display_account | string | 开通账户名称，用于签约时展示 | QQ用户(10001) |
 | signed_time | string | 协议签约时间，UMT+8 | 2021-08-09 22:17:05 |
 | expired_time | string | 协议过期时间，UMT+8 | 2021-08-09 22:17:34 |
@@ -142,7 +142,7 @@ enum ContractState {
 | app_id   | uint64 | 应用ID   | 707         |
 | app_name | string | 应用名称 | 腾讯视频App |
 
-## 协议设计
+## 接口设计
 
 ### 签约流程
 
@@ -169,6 +169,8 @@ sequenceDiagram
 
 #### 准备扣费协议
 
+商户指定代扣方案生成一份待签约的代扣协议，获取预签约代码`contract_token`。
+
 请求方法：`PrepareContract`
 
 请求参数：
@@ -189,10 +191,12 @@ sequenceDiagram
 | --- | --- | --- |
 | err_code | int32 | 错误码，请求成功时为0 |
 | err_msg | string | 错误提示，错误码非0时才有意义 |
-| contract_token | string | 待签约协议token |
+| contract_token | string | 预签约代码 |
 | expired_time | string | 签约时限 |
 
 #### 终止扣费协议
+
+由商户侧发起代扣协议的解约，需要商户签名。
 
 请求方法：`TerminateContract`
 
@@ -215,6 +219,8 @@ sequenceDiagram
 
 #### 签约扣费协议
 
+用户确认签约商家生成的扣费协议，需要用户签名。
+
 请求方法：`SignContract`
 
 请求参数：
@@ -234,6 +240,8 @@ sequenceDiagram
 
 #### 终止扣费协议
 
+由用户侧发起代扣协议的解约，需要用户签名。
+
 请求方法：`TerminateContract`
 
 请求参数：
@@ -252,6 +260,8 @@ sequenceDiagram
 | err_msg | string | 错误提示，错误码非0时才有意义 |
 
 #### 查看扣费服务列表
+
+获取当前用户的代扣协议列表，只返回状态为`有效（Valid）`的协议。
 
 请求方法：`GetUserContractList`
 
@@ -273,4 +283,38 @@ sequenceDiagram
 | limit | uint32 | （分页）每页条数 |
 | offset | uint32 | （分页）偏移数量 |
 | contract_list | ContractInfo[] | 协议列表 |
+
+## 数据安全
+
+### 传输安全
+
+#### 传输加密
+
+接口请求过程必须加密，以防中间人攻击（泄漏、篡改）。
+
+我们假设客户端已经获取到了服务器的RSA公钥（通过证书验证或者直接写死在客户端），客户端需要先与服务器建立“会话”：
+
+1. 客户端生成足够长的随机字符串，作为会话秘钥；
+2. 客户端使用服务器公钥加密会话秘钥，并发送给服务端；
+3. 服务端响应确认会话秘钥，并给出会话ID。
+
+随后，客户端的每次请求都应带上会话ID，并使用会话秘钥对请求体进行AES加密，再发送到服务器。服务器的响应也是会话秘钥AES加密后的数据，客户端需要解密后使用。这样避免了第三方读取请求、响应内容。
+
+如果接口采用HTTP协议，则可直接强制使用HTTPS，做好服务器证书的验证即可。
+
+#### 防重放攻击
+
+请求中需要带上**请求时间戳**和**请求序列号**，约定X小时内请求序列号不得重复，服务端缓存X小时内的请求序列号，丢弃重复请求，以防重放攻击。
+
+### 存储安全
+
+Demo采用MySQL数据库进行存储，除了运维角度进行权限控制外，明文存储的`contract_code`、`display_account`等字段也可使用AES加密后进行存储，但需要考虑性能开销、检索场景。
+
+### 隐私保护
+
+Demo简化设计中，各实体的ID字段均为`uint64`类型。
+
+如果递增生成，有遍历风险，可以将**商户ID**、**APP ID**、**扣费计划ID**、**用户ID**设计为随机生成的唯一标识，使其不具备规律性。
+
+不同商户的用户ID相同，可能被非法建立关联，泄漏用户隐私。可以参考微信`open_id`设计，为每个商户、应用分配`open_id秘钥`，对用户ID进行AES加密，永远对商户、应用侧提供用户ID的加密值，保证无法被关联分析。
 
